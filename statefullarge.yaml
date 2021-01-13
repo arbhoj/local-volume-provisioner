@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: largebusy
+spec:
+  serviceName: "largebusy"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: largebusy
+  template:
+    metadata:
+      labels:
+        app: largebusy
+    spec:
+      initContainers:
+      - image: busybox:1.28.4
+        name: mybusyinit
+        command: ["/bin/sh","-c","ls > /cache/test.txt"]
+        volumeMounts:
+        - mountPath: /cache
+          name: cache-volume-small
+      containers:
+      - image: busybox:1.28.4
+        name: mybusy
+        command: ["/bin/sh","-c","cat /mypod/test.txt && sleep 100000"]
+        volumeMounts:
+        - mountPath: /mypod
+          name: cache-volume-small
+  volumeClaimTemplates:
+  - metadata:
+      name: cache-volume-small
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "large"
+      resources:
+        requests:
+          storage: 9Gi
